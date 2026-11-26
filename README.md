@@ -6,23 +6,23 @@ Brain MRI (T1) 기반 알츠하이머 분류 모델 학습용 데이터 엔지�
 
  [1. 실행 방법](#1-실행-방법)<br>
  [2. 파이프라인 개요](#2-파이프라인-개요)<br>
-&nbsp;&nbsp;&nbsp;[2.1. 스크립트 처리 흐름](#21-스크립트-처리-흐름)<br>
-&nbsp;&nbsp;&nbsp;[2.2. 모달리티별 데이터 흐름](#22-모달리티별-데이터-흐름)<br>
+&nbsp;&nbsp;&nbsp;[2-1. 스크립트 처리 흐름](#2-1-스크립트-처리-흐름)<br>
+&nbsp;&nbsp;&nbsp;[2-2. 모달리티별 데이터 흐름](#2-2-모달리티별-데이터-흐름)<br>
  [3. 설계 결정](#3-설계-결정)<br>
-&nbsp;&nbsp;&nbsp;[3.1. 최소 단위: `series`](#31-최소-단위-series)<br>
-&nbsp;&nbsp;&nbsp;[3.2. 임상 방문과 영상 종류(T1·DWI·PET)의 관계](#32-임상-방문과-영상-종류t1dwipet의-관계)<br>
-&nbsp;&nbsp;&nbsp;[3.3. Train / Val / Test 분할](#33-train--val--test-분할)<br>
-&nbsp;&nbsp;&nbsp;[3.4. 기술 스택](#34-기술-스택)<br>
-&nbsp;&nbsp;&nbsp;[3.5. 미채택 대안](#35-미채택-대안)<br>
-&nbsp;&nbsp;&nbsp;[3.6. 가정한 것](#36-가정한-것)<br>
-&nbsp;&nbsp;&nbsp;[3.7. 데이터셋 식별자·재현 보장·학습 파이프라인 통합](#37-데이터셋-식별자재현-보장학습-파이프라인-통합)<br>
+&nbsp;&nbsp;&nbsp;[3-1. 최소 단위: `series`](#3-1-최소-단위-series)<br>
+&nbsp;&nbsp;&nbsp;[3-2. 임상 방문과 영상 종류(T1·DWI·PET)의 관계](#3-2-임상-방문과-영상-종류t1dwipet의-관계)<br>
+&nbsp;&nbsp;&nbsp;[3-3. Train / Val / Test 분할](#3-3-train--val--test-분할)<br>
+&nbsp;&nbsp;&nbsp;[3-4. 기술 스택](#3-4-기술-스택)<br>
+&nbsp;&nbsp;&nbsp;[3-5. 미채택 대안](#3-5-미채택-대안)<br>
+&nbsp;&nbsp;&nbsp;[3-6. 가정한 것](#3-6-가정한-것)<br>
+&nbsp;&nbsp;&nbsp;[3-7. 데이터셋 식별자·재현 보장·학습 파이프라인 통합](#3-7-데이터셋-식별자재현-보장학습-파이프라인-통합)<br>
  [4. 문제 Q1–Q6](#4-문제-q1q6)<br>
-&nbsp;&nbsp;&nbsp;[4.1. Q1. v1과 v2의 차이](#41-q1-v1과-v2의-차이)<br>
-&nbsp;&nbsp;&nbsp;[4.2. Q2. v1 파일 목록과 진단 시점](#42-q2-v1-파일-목록과-진단-시점)<br>
-&nbsp;&nbsp;&nbsp;[4.3. Q3. 진단 수정 1건이 영향을 주는 데이터셋 버전](#43-q3-진단-수정-1건이-영향을-주는-데이터셋-버전)<br>
-&nbsp;&nbsp;&nbsp;[4.4. Q4. 학습·평가 데이터 오염 여부 확인 방법과 결과](#44-q4-학습평가-데이터-오염-여부-확인-방법과-결과)<br>
-&nbsp;&nbsp;&nbsp;[4.5. Q5. 특정 영상에 어떤 진단 기록이 왜 연결됐는지](#45-q5-특정-영상에-어떤-진단-기록이-왜-연결됐는지)<br>
-&nbsp;&nbsp;&nbsp;[4.6. Q6. S001의 임상 방문마다 대응하는 T1·DWI·PET와 대응 규칙](#46-q6-s001의-임상-방문마다-대응하는-t1dwipet와-대응-규칙)<br>
+&nbsp;&nbsp;&nbsp;[4-1. Q1. v1과 v2의 차이](#4-1-q1-v1과-v2의-차이)<br>
+&nbsp;&nbsp;&nbsp;[4-2. Q2. v1 파일 목록과 진단 시점](#4-2-q2-v1-파일-목록과-진단-시점)<br>
+&nbsp;&nbsp;&nbsp;[4-3. Q3. 진단 수정 1건이 영향을 주는 데이터셋 버전](#4-3-q3-진단-수정-1건이-영향을-주는-데이터셋-버전)<br>
+&nbsp;&nbsp;&nbsp;[4-4. Q4. 학습·평가 데이터 오염 여부 확인 방법과 결과](#4-4-q4-학습평가-데이터-오염-여부-확인-방법과-결과)<br>
+&nbsp;&nbsp;&nbsp;[4-5. Q5. 특정 영상에 어떤 진단 기록이 왜 연결됐는지](#4-5-q5-특정-영상에-어떤-진단-기록이-왜-연결됐는지)<br>
+&nbsp;&nbsp;&nbsp;[4-6. Q6. S001의 임상 방문마다 대응하는 T1·DWI·PET와 대응 규칙](#4-6-q6-s001의-임상-방문마다-대응하는-t1dwipet와-대응-규칙)<br>
  [5. 디렉토리 구조](#5-디렉토리-구조)
 
 ---
@@ -48,7 +48,7 @@ python scripts/04_validate.py --version v2
 
 ## 2. 파이프라인 개요
 
-### 2.1. 스크립트 처리 흐름
+### 2-1. 스크립트 처리 흐름
 
 | 스크립트 | 역할 | 입력 | 출력 (DB 테이블 / 파일) |
 |---------|------|------|----------------------|
@@ -57,7 +57,7 @@ python scripts/04_validate.py --version v2
 | `03_publish.py` | 데이터셋 발행 | DB (`visit_series_links` ∩ `preprocessed_outputs`) | `dataset_versions` · `dataset_samples` + `manifest.json` + `train/val/test.csv` |
 | `04_validate.py` | 무결성 검증 | `datasets/{version}/` | exit 0 (PASS) / exit 1 (FAIL) |
 
-### 2.2. 모달리티별 데이터 흐름
+### 2-2. 모달리티별 데이터 흐름
 
 샘플 데이터 기준 (series 36개: T1×15, DWI×15, PET×6):
 
@@ -67,17 +67,19 @@ python scripts/04_validate.py --version v2
 | DWI | ✓ 15개 | ✗ | ✗ (T1 study_uid 상속) | ✗ |
 | PET | ✓ 6개 | ✗ | ✓ 직접 연결 | ✗ (전처리 출력 없음) |
 
-> 현재 파이프라인은 T1-only 학습 데이터셋입니다. DWI·PET는 임상 연결 맥락으로만 활용되며, 전처리 출력이 추가되면 자동으로 `dataset_samples`에 포함됩니다.
+> 현재 파이프라인은 T1-only 학습 데이터셋입니다.  
+> DWI·PET는 임상 연결 맥락으로만 활용되며, 전처리 출력이 추가되면 자동으로 `dataset_samples`에 포함됩니다.
 
 ---
 
 ## 3. 설계 결정
 
-### 3.1. 최소 단위: `series`
+### 3-1. 최소 단위: `series`
 
-모델 입력 = NIfTI 볼륨 1개 = series 1개. Subject·visit은 레이블 단위이고 직접적인 모델 입력이 아니므로 series를 최소 단위로 선택.
+모델 입력 = NIfTI 볼륨 1개 = series 1개.  
+Subject·visit은 레이블 단위이고 직접적인 모델 입력이 아니므로 series를 최소 단위로 선택.
 
-### 3.2. 임상 방문과 영상 종류(T1·DWI·PET)의 관계
+### 3-2. 임상 방문과 영상 종류(T1·DWI·PET)의 관계
 
 **T1·PET는 임상 방문에 직접 연결, DWI는 T1의 연결을 상속합니다.**
 
@@ -95,37 +97,39 @@ python scripts/04_validate.py --version v2
 | DWI | 동일 `StudyInstanceUID`로 T1과 묶임 | T1과 같은 MRI 세션 → T1의 임상 방문 맥락을 공유 |
 | PET | `visit_series_links`에 명시적 등록 (별도 study) | MRI와 별도 PET 세션으로 촬영 → 직접 ±30일 매칭 필요 |
 
-T1이 미연결인 study의 DWI는 labeled dataset에서 제외됩니다. PET는 T1과 독립적으로 연결되므로 T1 연결 여부와 무관합니다.
+T1이 미연결인 study의 DWI는 labeled dataset에서 제외됩니다.  
+PET는 T1과 독립적으로 연결되므로 T1 연결 여부와 무관합니다.
 
 **방문-영상 연결 규칙 (T1·PET 공통):**
 
-`|StudyDate − EXAMDATE| ≤ 30일` 범위 내 가장 가까운 임상 방문을 연결.
+`|StudyDate − EXAMDATE| ≤ 30일` 범위 내 가장 가까운 임상 방문을 연결.  
 동점 시 촬영 이전 방문 우선 (사후 방문 사용 시 label leakage 위험).
 30일 이내 방문 없는 series는 labeled dataset 미포함.
 
-### 3.3. Train / Val / Test 분할
+### 3-3. Train / Val / Test 분할
 
 - **단위**: subject (동일 subject의 모든 series는 같은 split)
 - **비율**: 70 / 15 / 15
 - **계층화**: 첫 방문 진단 기준 CN/MCI/Dementia 비율 유지
 - **시드**: 42 (manifest에 기록 → 완전 재현 가능)
 
-> 일반 ML의 80/10/10과 달리 15%씩 확보하는 이유: subject 단위 분할 시 실질 독립 샘플 수가 적고, Dementia 소수 클래스의 test 대표성 보장 필요.
+> 일반 ML의 80/10/10과 달리 15%씩 확보하는 이유:  
+> subject 단위 분할 시 실질 독립 샘플 수가 적고, Dementia 소수 클래스의 test 대표성 보장 필요.
 
-### 3.4. 기술 스택
+### 3-4. 기술 스택
 
 | 역할 | 선택 | 이유 |
 |------|------|------|
 | 메타데이터 저장·쿼리 | SQLite (`db/registry.db`) | 파일 1개, Python 내장, SQL로 복합 쿼리 가능 |
 | 버전 불변 스냅샷 | JSON manifest (`datasets/vN/`) | MLOps 엔지니어가 직접 소비, Git 커밋 가능 |
 
-### 3.5. 미채택 대안
+### 3-5. 미채택 대안
 
 - **DVC**: 외부 스토리지 연동 필수, 환경 의존성 큼
 - **PostgreSQL**: 서버 프로세스 필요, 과도한 규모
 - **순수 JSON 파일**: cross-file 집계 쿼리 불가 (Q3 등)
 
-### 3.6. 가정한 것
+### 3-6. 가정
 
 - derived JSON의 `Outputs` 중 `role="image"` 파일만 학습 입력으로 사용
 - `SeriesDescription` 대소문자 무관 keyword 매칭으로 image_type 판별
@@ -137,7 +141,7 @@ T1이 미연결인 study의 DWI는 labeled dataset에서 제외됩니다. PET는
 
 ---
 
-### 3.7. 데이터셋 식별자·재현 보장·학습 파이프라인 통합
+### 3-7. 데이터셋 식별자·재현 보장·학습 파이프라인 통합
 
 #### 식별자 형식
 
@@ -191,7 +195,7 @@ python scripts/04_validate.py --version v1 && python train.py --dataset v1
 
 ---
 
-### 4.1. Q1. v1과 v2의 차이
+### 4-1. Q1. v1과 v2의 차이
 
 **Q. v1과 v2 데이터셋에서 샘플 목록과 진단이 어떻게 달라지는가?**
 
@@ -246,7 +250,7 @@ GROUP BY dv.version;
 
 ---
 
-### 4.2. Q2. v1 파일 목록과 진단 시점
+### 4-2. Q2. v1 파일 목록과 진단 시점
 
 **Q. v1에 포함된 각 영상 파일 경로, 진단, 그 진단이 내려진 임상 시점은?**
 
@@ -277,7 +281,7 @@ ORDER BY s.subject_id, ds.diagnosis_viscode;
 
 ---
 
-### 4.3. Q3. 진단 수정 1건이 영향을 주는 데이터셋 버전
+### 4-3. Q3. 진단 수정 1건이 영향을 주는 데이터셋 버전
 
 **Q. `changes/diagnosis.csv`의 수정 2건이 어떤 버전에 반영되고, v1은 보호되는가?**
 
@@ -351,7 +355,7 @@ ORDER BY ds.dataset_version;
 
 ---
 
-### 4.4. Q4. 학습·평가 데이터 오염 여부 확인 방법과 결과
+### 4-4. Q4. 학습·평가 데이터 오염 여부 확인 방법과 결과
 
 **Q. train/val/test 간 subject 중복(data leakage)이 없는지 어떻게 확인하는가?**
 
@@ -402,7 +406,7 @@ leakage가 발생하는 대표적 패턴:
 
 ---
 
-### 4.5. Q5. 특정 영상에 어떤 진단 기록이 왜 연결됐는지
+### 4-5. Q5. 특정 영상에 어떤 진단 기록이 왜 연결됐는지
 
 **Q. `visit_series_links`에서 특정 series가 어떤 임상 방문에 연결됐고, 그 근거는?**
 
@@ -442,7 +446,7 @@ ORDER BY s.subject_id, st.study_date;
 
 ---
 
-### 4.6. Q6. S001의 임상 방문마다 대응하는 T1·DWI·PET와 대응 규칙
+### 4-6. Q6. S001의 임상 방문마다 대응하는 T1·DWI·PET와 대응 규칙
 
 **Q. S001의 각 임상 방문에 어떤 T1·DWI·PET 영상이 대응되며, 각 연결 방식은?**
 
