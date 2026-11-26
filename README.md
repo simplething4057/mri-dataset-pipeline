@@ -556,5 +556,3 @@ mri-dataset-pipeline/
 ├── requirements.txt
 └── README.md
 ```
-#   m r i - d a t a s e t - p i p e l i n e  
- 
