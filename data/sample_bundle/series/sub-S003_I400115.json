@@ -1,0 +1,11 @@
+{
+  "ImageID": "I400115",
+  "PatientID": "S003",
+  "StudyDate": "20210226",
+  "StudyInstanceUID": "2.25.218498126315368486258900007711915642908",
+  "SeriesInstanceUID": "2.25.108624465465121415681994748499479220993",
+  "SeriesDescription": "MPRAGE",
+  "Modality": "MR",
+  "Manufacturer": "Siemens",
+  "ManufacturerModelName": "Prisma"
+}

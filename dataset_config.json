@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12",
+  "name": "mri-dataset-pipeline",
+  "version": "0.1.0",
+  "description": "Brain MRI (T1) 기반 알츠하이머 분류 모델 학습용 데이터셋 파이프라인",
+
+  "design_decisions": {
+    "minimum_unit": {
+      "value": "series",
+      "rationale": "모델 입력이 NIfTI 볼륨 1개(= series 1개)이므로 학습 샘플의 자연스러운 최소 단위. Subject·visit은 레이블 단위이고, study는 여러 series를 묶는 컨텍스트일 뿐 직접적인 모델 입력이 아님."
+    },
+    "visit_series_link": {
+      "strategy": "nearest_temporal_within_window",
+      "window_days": 30,
+      "tie_break": "prefer_prior_visit",
+      "tie_break_rationale": "촬영 당시 임상 상태를 반영하기 위해 사후 방문보다 이전 방문 우선. 사후 방문은 미래 정보 누수(label leakage) 위험 있음.",
+      "unlinked_policy": "exclude_from_labeled_dataset",
+      "matching_key": "PTID == PatientID",
+      "rule_column": "link_rule",
+      "rule_value": "nearest_within_30d"
+    }
+  },
+
+  "tech_stack": {
+    "registry_db": {
+      "engine": "sqlite3",
+      "path": "db/registry.db",
+      "rationale": "파일 1개로 완결, 추가 서버 없음, Python 표준 라이브러리 내장. SQL로 Q1~Q6 쿼리 가능. DVC는 외부 스토리지 연동 필요(오버킬), 순수 JSON은 복합 쿼리 불가."
+    },
+    "version_manifest": {
+      "format": "json",
+      "location": "datasets/{version}/manifest.json",
+      "rationale": "SQLite는 쿼리용, manifest는 MLOps가 직접 소비하는 불변 스냅샷. Git에 커밋 가능."
+    },
+    "language": "python",
+    "min_python": "3.10",
+    "dependencies": ["pandas", "numpy"]
+  },
+
+  "identifier_rules": {
+    "subject_id": {
+      "source": "sidecar.PatientID",
+      "example": "S001"
+    },
+    "study_uid": {
+      "source": "sidecar.StudyInstanceUID",
+      "example": "2.25.xxxxx"
+    },
+    "series_uid": {
+      "source": "sidecar.SeriesInstanceUID",
+      "globally_unique": true,
+      "example": "2.25.yyyyy"
+    },
+    "preprocessed_id": {
+      "format": "integer_autoincrement",
+      "source": "preprocessed_outputs.id (DB 자동 생성)",
+      "rationale": "UNIQUE(series_uid, pipeline_version, output_role)로 중복 적재 방지.",
+      "example": 1
+    },
+    "dataset_version": {
+      "format": "v{N}",
+      "type": "monotonic_integer",
+      "example": "v1"
+    },
+    "sample_id": {
+      "format": "{dataset_version}__{series_uid}",
+      "example": "v1__2.25.yyyyy"
+    }
+  },
+
+  "split": {
+    "unit": "subject",
+    "unit_rationale": "같은 subject의 모든 방문·시리즈는 반드시 같은 split에 배정. series 단위 분할 시 동일 subject가 train과 test에 모두 등장하는 data leakage 발생.",
+    "ratios": {
+      "train": 0.70,
+      "val": 0.15,
+      "test": 0.15
+    },
+    "ratio_rationale": "의료 영상 연구 관행. 아래 '설계 근거' 섹션 참조.",
+    "stratify_by": "first_visit_diagnosis",
+    "stratify_rationale": "CN/MCI/Dementia 비율이 각 split에서 유사하도록 보장. Dementia는 소수 클래스이므로 미층화 시 test에서 0건이 될 수 있음.",
+    "random_seed": 42,
+    "seed_rationale": "manifest에 기록 → 1년 뒤 동일 seed로 완전 재현 가능."
+  },
+
+  "output_format": {
+    "manifest_fields": [
+      "dataset_version",
+      "series_uid",
+      "image_id",
+      "subject_id",
+      "study_date",
+      "image_type",
+      "modality",
+      "pipeline_version",
+      "output_path",
+      "sha256",
+      "diagnosis",
+      "diagnosis_viscode",
+      "diagnosis_exam_date",
+      "diagnosis_stamp",
+      "split"
+    ],
+    "split_files": ["train.csv", "val.csv", "test.csv"],
+    "manifest_meta_fields": [
+      "version",
+      "published_at",
+      "clinical_snapshot_hash",
+      "link_rule",
+      "split_seed",
+      "split_ratios",
+      "total_samples",
+      "per_split_counts",
+      "per_class_counts"
+    ]
+  },
+
+  "validation_rules": {
+    "exit_code_pass": 0,
+    "exit_code_fail": 1,
+    "checks": [
+      "sha256_integrity",
+      "no_subject_overlap_between_splits",
+      "all_manifest_fields_present",
+      "no_duplicate_sample_ids",
+      "diagnosis_values_in_allowed_set",
+      "split_ratios_within_tolerance"
+    ],
+    "allowed_diagnoses": ["CN", "MCI", "Dementia"],
+    "split_ratio_tolerance": 0.05
+  },
+
+  "image_type_mapping": {
+    "_comment": "SeriesDescription 문자열 기반 규칙. Modality=PT는 무조건 PET.",
+    "rules_priority": ["modality_pt_first", "keyword_match", "fallback_unknown"],
+    "modality_pt": "PET",
+    "keywords_T1": ["MPRAGE", "IR-FSPGR", "SAG T1"],
+    "keywords_DWI": ["DTI", "DWI", "DIFFUSION"],
+    "fallback": "UNKNOWN",
+    "observed_in_data": {
+      "T1":  ["MPRAGE", "Accelerated Sag IR-FSPGR", "Sag T1 3D MPRAGE"],
+      "DWI": ["Axial DTI", "Axial DWI"],
+      "PET": ["AV45 Coreg, Avg, Std Img and Vox Siz, Uniform Resolution"]
+    }
+  },
+
+  "derived_output": {
+    "training_role": "image",
+    "training_role_rationale": "derived JSON의 Outputs 배열에 image(T1w NIfTI)와 mask 2종이 있음. 학습 입력은 image role만 사용. mask는 전처리 품질 확인용.",
+    "dataset_scope": "T1_only",
+    "dataset_scope_rationale": "derived/에 T1 series만 전처리 결과가 존재. DWI·PET는 derived 없음 → v1 학습 데이터셋은 T1 한정."
+  },
+
+  "data_sources": {
+    "series_dir": "data/sample_bundle/series/",
+    "derived_dir_v1_0": "data/sample_bundle/derived/v1.0/",
+    "clinical_csv": "data/sample_bundle/clinical/diagnosis.csv",
+    "changes_diagnosis_csv": "data/sample_bundle/changes/diagnosis.csv",
+    "changes_derived_dir_v1_1": "data/sample_bundle/changes/derived/v1.1/"
+  },
+
+  "known_changes_v1_to_v2": {
+    "diagnosis_updated": [
+      {"subject_id": "S003", "viscode2": "bl",  "old": "MCI",  "new": "CN",       "new_stamp": "2026-10-02 09:00:00"},
+      {"subject_id": "S006", "viscode2": "m12", "old": "MCI",  "new": "Dementia", "new_stamp": "2026-10-02 09:00:00"}
+    ],
+    "pipeline_updated": {
+      "old_version": "1.0",
+      "old_commit": "a1b2c3d",
+      "new_version": "1.1",
+      "new_commit": "e4f5a6b",
+      "affected_series_count": 15
+    }
+  },
+
+  "directory_layout": {
+    "data_input": "data/",
+    "db": "db/",
+    "datasets": "datasets/",
+    "scripts": "scripts/",
+    "readme": "README.md"
+  }
+}

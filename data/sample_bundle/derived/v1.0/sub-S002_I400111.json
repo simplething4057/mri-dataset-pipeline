@@ -1,0 +1,19 @@
+{
+  "SourceImageID": "I400111",
+  "SourceSeriesInstanceUID": "2.25.139050325920895359603923626643396111424",
+  "PipelineName": "d2n-n4-seg",
+  "PipelineVersion": "1.0",
+  "CodeCommit": "a1b2c3d",
+  "Outputs": [
+    {
+      "role": "image",
+      "path": "sub-S002_I400111_desc-n4_T1w.nii.gz",
+      "sha256": "daaeb4180a346357f6cc686c043e0d3799f2666b3f091cdc7b2f2975abf5515a"
+    },
+    {
+      "role": "mask",
+      "path": "sub-S002_I400111_desc-seg_mask.nii.gz",
+      "sha256": "ef25dda4bc76e4e766314a6fed7da60e1966286f33923d5b80e9d1696c06862b"
+    }
+  ]
+}

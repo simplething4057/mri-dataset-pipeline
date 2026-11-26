@@ -1,0 +1,11 @@
+{
+  "ImageID": "I400134",
+  "PatientID": "S008",
+  "StudyDate": "20210808",
+  "StudyInstanceUID": "2.25.81070209851228100607023771578651584464",
+  "SeriesInstanceUID": "2.25.253127118873955262389892679844395101546",
+  "SeriesDescription": "Sag T1 3D MPRAGE",
+  "Modality": "MR",
+  "Manufacturer": "Philips",
+  "ManufacturerModelName": "Ingenia"
+}

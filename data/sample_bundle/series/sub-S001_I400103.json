@@ -1,0 +1,10 @@
+{
+  "ImageID": "I400103",
+  "PatientID": "S001",
+  "StudyDate": "20210122",
+  "StudyInstanceUID": "2.25.155420649517268232677490437801833649916",
+  "SeriesInstanceUID": "2.25.196887901554817720253545192584107943747",
+  "SeriesDescription": "AV45 Coreg, Avg, Std Img and Vox Siz, Uniform Resolution",
+  "Modality": "PT",
+  "Radiopharmaceutical": "Florbetapir"
+}

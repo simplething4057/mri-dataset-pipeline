@@ -1,0 +1,11 @@
+{
+  "ImageID": "I400131",
+  "PatientID": "S006",
+  "StudyDate": "20220622",
+  "StudyInstanceUID": "2.25.230363279805522182235632635279436546538",
+  "SeriesInstanceUID": "2.25.173908742093423266718753969567460452200",
+  "SeriesDescription": "Axial DTI",
+  "Modality": "MR",
+  "Manufacturer": "GE MEDICAL SYSTEMS",
+  "ManufacturerModelName": "SIGNA Premier"
+}

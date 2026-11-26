@@ -1,0 +1,11 @@
+{
+  "ImageID": "I400120",
+  "PatientID": "S004",
+  "StudyDate": "20210323",
+  "StudyInstanceUID": "2.25.309057419374191053386507525727705195453",
+  "SeriesInstanceUID": "2.25.318624703644910938907842213266529743344",
+  "SeriesDescription": "Accelerated Sag IR-FSPGR",
+  "Modality": "MR",
+  "Manufacturer": "GE MEDICAL SYSTEMS",
+  "ManufacturerModelName": "SIGNA Premier"
+}

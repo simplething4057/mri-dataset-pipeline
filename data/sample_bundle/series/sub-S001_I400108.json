@@ -1,0 +1,11 @@
+{
+  "ImageID": "I400108",
+  "PatientID": "S001",
+  "StudyDate": "20230101",
+  "StudyInstanceUID": "2.25.184175969773230063489978397355317453283",
+  "SeriesInstanceUID": "2.25.108741382823911436097029739663369122451",
+  "SeriesDescription": "Axial DTI",
+  "Modality": "MR",
+  "Manufacturer": "Siemens",
+  "ManufacturerModelName": "Prisma"
+}

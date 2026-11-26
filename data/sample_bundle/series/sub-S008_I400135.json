@@ -1,0 +1,11 @@
+{
+  "ImageID": "I400135",
+  "PatientID": "S008",
+  "StudyDate": "20210808",
+  "StudyInstanceUID": "2.25.81070209851228100607023771578651584464",
+  "SeriesInstanceUID": "2.25.304091909485011089511549486971042619987",
+  "SeriesDescription": "Axial DWI",
+  "Modality": "MR",
+  "Manufacturer": "Philips",
+  "ManufacturerModelName": "Ingenia"
+}
