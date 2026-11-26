@@ -106,12 +106,16 @@ def validate(version: str) -> bool:
     n_subjects = sum(len(v) for v in subj_per_split.values())
 
     if n_subjects > 0:
+        # 소수 데이터셋에서는 subject 1명이 1/n_subjects를 차지하므로
+        # 고정 ±5%가 불가능한 경우가 발생. 적응형 허용오차 사용.
+        adaptive_tol = max(SPLIT_RATIO_TOLERANCE, 1.0 / n_subjects)
+        tol_note = f"±{adaptive_tol:.3f} (적응형)" if adaptive_tol > SPLIT_RATIO_TOLERANCE else f"±{SPLIT_RATIO_TOLERANCE}"
+
         for sp, expected in EXPECTED_RATIOS.items():
             n_sp = len(subj_per_split[sp])
             actual = n_sp / n_subjects
-            # 부동소수점 오차를 허용하기 위해 epsilon 추가
-            if abs(actual - expected) > SPLIT_RATIO_TOLERANCE + 1e-9:
-                fail(f"{sp} subject 비율 오차 초과: {n_sp}/{n_subjects}={actual:.2f} vs 기대 {expected:.2f} (허용 ±{SPLIT_RATIO_TOLERANCE})")
+            if abs(actual - expected) > adaptive_tol + 1e-9:
+                fail(f"{sp} subject 비율 오차 초과: {n_sp}/{n_subjects}={actual:.2f} vs 기대 {expected:.2f} (허용 {tol_note})")
                 errors += 1
             else:
                 ok(f"{sp} subject 비율 {actual:.2f} ({n_sp}/{n_subjects}명, 기대 {expected:.2f})")

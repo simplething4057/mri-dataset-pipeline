@@ -173,9 +173,16 @@ def publish(version: str) -> None:
         return
 
     subjects = list({s["subject_id"] for s in samples})
-    first_diag: dict[str, str] = {}
+    # bl 방문 진단 우선, bl 스캔이 미연결인 경우 가장 이른 study_date 진단으로 fallback
+    bl_diag = {
+        s["subject_id"]: s["diagnosis"]
+        for s in samples
+        if s["diagnosis_viscode"] == "bl"
+    }
+    earliest_diag: dict[str, str] = {}
     for s in sorted(samples, key=lambda x: x["study_date"]):
-        first_diag.setdefault(s["subject_id"], s["diagnosis"])
+        earliest_diag.setdefault(s["subject_id"], s["diagnosis"])
+    first_diag = {subj: bl_diag.get(subj, earliest_diag[subj]) for subj in subjects}
 
     split_map = stratified_subject_split(subjects, first_diag, SPLIT_SEED)
 
@@ -190,15 +197,20 @@ def publish(version: str) -> None:
     for r in sample_rows:
         per_class[r["diagnosis"]] = per_class.get(r["diagnosis"], 0) + 1
 
+    # 이 데이터셋에 포함된 subject의 임상 기록만 해싱 (전체 DB가 아닌 데이터셋 범위로 한정)
+    placeholders = ",".join("?" * len(subjects))
     clinical_snapshot = conn.execute(
-        """SELECT h.subject_id, h.viscode2, h.diagnosis, h.update_stamp
+        f"""SELECT h.subject_id, h.viscode2, h.diagnosis, h.update_stamp
            FROM clinical_visit_history h
            INNER JOIN (
                SELECT subject_id, viscode2, MAX(update_stamp) AS ms
-               FROM clinical_visit_history GROUP BY subject_id, viscode2
+               FROM clinical_visit_history
+               WHERE subject_id IN ({placeholders})
+               GROUP BY subject_id, viscode2
            ) latest ON h.subject_id=latest.subject_id
              AND h.viscode2=latest.viscode2 AND h.update_stamp=latest.ms
-           ORDER BY h.subject_id, h.viscode2"""
+           ORDER BY h.subject_id, h.viscode2""",
+        subjects,
     ).fetchall()
     clinical_str = json.dumps([dict(r) for r in clinical_snapshot], sort_keys=True)
     clinical_hash = hashlib.sha256(clinical_str.encode()).hexdigest()
@@ -243,7 +255,7 @@ def publish(version: str) -> None:
         # 파일 이동 성공 → DB 커밋
         conn.execute(
             "INSERT INTO dataset_versions (version, created_at, manifest_path) VALUES (?, ?, ?)",
-            (version, created_at, str(out_dir / "manifest.json")),
+            (version, created_at, f"datasets/{version}/manifest.json"),
         )
         for s in sample_rows:
             conn.execute(

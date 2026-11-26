@@ -219,7 +219,7 @@ def load_derived(conn: sqlite3.Connection, derived_dir: Path) -> None:
 
         for output in d.get("Outputs", []):
             conn.execute(
-                """INSERT OR REPLACE INTO preprocessed_outputs
+                """INSERT OR IGNORE INTO preprocessed_outputs
                    (image_id, series_uid, pipeline_name, pipeline_version,
                     code_commit, output_role, output_path, sha256, source_json_path)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",

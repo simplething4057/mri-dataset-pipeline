@@ -44,6 +44,17 @@ python scripts/03_publish.py --version v2
 python scripts/04_validate.py --version v2
 ```
 
+### 테스트 실행
+
+```bash
+pytest tests/ -v          # 단위 + 통합 (54개)
+pytest tests/test_unit.py         # 단위 테스트만
+pytest tests/test_integration.py  # 통합 테스트만
+```
+
+단위 테스트는 DB·파일시스템에 의존하지 않고 순수 함수만 검증합니다.  
+통합 테스트는 임시 디렉터리에 독립 DB를 생성하므로 실제 `db/registry.db`와 `datasets/`를 오염시키지 않습니다.
+
 ---
 
 ## 2. 파이프라인 개요
@@ -110,11 +121,14 @@ PET는 T1과 독립적으로 연결되므로 T1 연결 여부와 무관합니다
 
 - **단위**: subject (동일 subject의 모든 series는 같은 split)
 - **비율**: 70 / 15 / 15
-- **계층화**: 첫 방문 진단 기준 CN/MCI/Dementia 비율 유지
+- **계층화**: 클래스별 독립 split — 각 클래스 그룹 내에서 개별적으로 70/15/15 배정
+  - n ≥ 3: val·test 각 최소 1명 보장 (소수 클래스가 val/test에서 완전히 빠지는 현상 방지)
+  - n = 2: train·test 각 1명
+  - n = 1: train (불가피)
 - **시드**: 42 (manifest에 기록 → 완전 재현 가능)
 
 > 일반 ML의 80/10/10과 달리 15%씩 확보하는 이유:  
-> subject 단위 분할 시 실질 독립 샘플 수가 적고, Dementia 소수 클래스의 test 대표성 보장 필요.
+> subject 단위 분할 시 실질 독립 샘플 수가 적고, Dementia 소수 클래스의 val·test 대표성 보장 필요.
 
 ### 3-4. 기술 스택
 
@@ -160,6 +174,7 @@ PET는 T1과 독립적으로 연결되므로 T1 연결 여부와 무관합니다
 | `samples[].split` | train / val / test 소속 |
 | `split_seed` | 분할 알고리즘 시드 → 완전 재현 가능 |
 | `pipeline_version` | 전처리 파이프라인 버전 |
+| `pipeline_commit` | 발행 시점의 파이프라인 스크립트 git 커밋 해시 → 코드 버전 추적 |
 | `clinical_snapshot_hash` | 발행 당시 유효 진단 전체의 SHA-256 → 진단 상태 고정 증명 |
 
 1년 뒤에도 `datasets/v1/manifest.json`만 있으면 `output_path`로 파일을 찾고 `sha256`으로 동일성을 확인해 완전히 같은 학습 입력을 구성할 수 있습니다.
@@ -180,7 +195,7 @@ python scripts/04_validate.py --version v1 && python train.py --dataset v1
 2. 필수 필드 완결성 (12개 필드)
 3. 허용 진단값 (CN / MCI / Dementia)
 4. split 간 subject 중복 없음 (leakage 없음)
-5. split 비율 허용 오차 ±5% (subject 단위)
+5. split 비율 허용 오차 (subject 단위): `max(±5%, 1/n_subjects)` — n이 작은 데이터셋에서 한 명 단위의 이산 오차를 허용
 6. manifest samples ↔ split CSV 일치
 7. sha256 무결성 (파일 존재 시 검증, 없으면 메타데이터 완결성만 확인)
 
@@ -556,7 +571,11 @@ mri-dataset-pipeline/
 │   ├── 02_link.py
 │   ├── 03_publish.py
 │   └── 04_validate.py
+├── tests/
+│   ├── conftest.py          # pytest 공통 픽스처 (임시 DB 환경)
+│   ├── test_unit.py         # 순수 함수 단위 테스트 (34개)
+│   └── test_integration.py  # 전체 파이프라인 통합 테스트 (20개)
 ├── dataset_config.json      # 설계 근거·필드 명세 참조 문서 (스크립트가 직접 읽지 않음)
-├── requirements.txt
+├── requirements.txt         # numpy, pytest
 └── README.md
 ```

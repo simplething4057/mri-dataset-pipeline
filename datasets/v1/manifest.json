@@ -1,7 +1,8 @@
 {
   "version": "v1",
-  "published_at": "2026-11-25T08:37:11.131873+00:00",
+  "published_at": "2026-11-26T02:19:06.541836+00:00",
   "pipeline_version": "1.0",
+  "pipeline_commit": "82f834b",
   "link_rule": "nearest_within_30d",
   "split_seed": 42,
   "split_ratios": {
@@ -11,9 +12,9 @@
   },
   "total_samples": 15,
   "per_split_counts": {
-    "train": 9,
+    "train": 7,
     "val": 3,
-    "test": 3
+    "test": 5
   },
   "per_class_counts": {
     "CN": 8,
@@ -146,7 +147,7 @@
       "diagnosis_viscode": "bl",
       "diagnosis_exam_date": "2021-03-05",
       "diagnosis_stamp": "2021-03-07 10:00:00",
-      "split": "train"
+      "split": "test"
     },
     {
       "series_uid": "2.25.36930907837198606447841881236532321162",
@@ -164,7 +165,7 @@
       "diagnosis_viscode": "m12",
       "diagnosis_exam_date": "2022-03-11",
       "diagnosis_stamp": "2022-03-13 10:00:00",
-      "split": "train"
+      "split": "test"
     },
     {
       "series_uid": "2.25.318624703644910938907842213266529743344",
